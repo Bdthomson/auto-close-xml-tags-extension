@@ -5,6 +5,9 @@ For more information, refer to the [Anthropic Prompt Engineering Guide](https://
 
 With this extension, it's now less tedious to format your prompts with xml.
 
+## Note
+This extension is configured to run only on specific websites. Ensure that the websites you intend to use it on are included in the extension's permissions. You can modify the permissions in the `manifest.json` file to add or remove websites as needed.
+
 ## How to Load the Extension Unpacked
 
 1. Download the latest release zip file from the [GitHub releases page](https://github.com/Bdthomson/auto-close-xml-tags-extension/releases).
