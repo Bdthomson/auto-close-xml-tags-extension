@@ -7,7 +7,7 @@ With this extension, it's now less tedious to format your prompts with xml.
 
 ## How to Load the Extension Unpacked
 
-1. Download the latest release zip file from the [GitHub releases page](https://github.com/Bdthomson/auto-close-html-tags-extension/releases).
+1. Download the latest release zip file from the [GitHub releases page](https://github.com/Bdthomson/auto-close-xml-tags-extension/releases).
 2. Extract the contents of the zip file to a directory on your computer.
 3. Open your Chrome browser and navigate to `chrome://extensions/`.
 4. Enable "Developer mode" by toggling the switch in the top right corner.

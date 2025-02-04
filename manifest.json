@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Auto Close HTML Tags",
+  "name": "Auto Close XML Tags",
   "version": "1.0",
-  "description": "Automatically insert closing HTML tags after opening tags in text inputs.",
+  "description": "Automatically insert closing XML tags after opening tags in text inputs.",
   "permissions": [],
   "content_scripts": [
     {
