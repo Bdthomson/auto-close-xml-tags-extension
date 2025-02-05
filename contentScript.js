@@ -1,77 +1,81 @@
 const voidElements = [
-    'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
-    'link', 'meta', 'param', 'source', 'track', 'wbr'
-  ];
-  
-  function insertAtCursor(element, text, cursorOffset = 0) {
-    if (element.value !== undefined) {
-      const start = element.selectionStart;
-      element.value = element.value.slice(0, start) + text + element.value.slice(start);
-      element.selectionStart = element.selectionEnd = start + cursorOffset;
-    } else if (element.isContentEditable) {
-      const selection = window.getSelection();
-      if (!selection.rangeCount) return;
-      const range = selection.getRangeAt(0);
-      range.deleteContents();
-      const textNode = document.createTextNode(text);
-      range.insertNode(textNode);
-      range.setStart(textNode, cursorOffset);
-      range.setEnd(textNode, cursorOffset);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
+  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
+  'link', 'meta', 'param', 'source', 'track', 'wbr'
+];
+
+document.addEventListener('keydown', event => {
+  // Only trigger on ">" key
+  if (event.key !== '>') return;
+
+  const target = event.target;
+  if (
+    !target ||
+    (!['TEXTAREA', 'INPUT'].includes(target.tagName) && !target.isContentEditable)
+  ) {
+    return;
   }
-  
-  document.addEventListener('keydown', event => {
-    if (event.key !== '>') return;
-  
-    const target = event.target;
-    if (
-      !target ||
-      (!['TEXTAREA', 'INPUT'].includes(target.tagName) && !target.isContentEditable)
-    ) {
-      return;
-    }
-  
-    // Timeout ensures the '>' character is already inserted.
-    setTimeout(() => {
-      let text, cursorPos;
-      if (target.value !== undefined) {
-        text = target.value;
-        cursorPos = target.selectionStart;
-      } else if (target.isContentEditable) {
-        const selection = window.getSelection();
-        if (!selection.rangeCount) return;
-        const range = selection.getRangeAt(0);
-        cursorPos = range.startOffset;
-        text = target.innerText;
-      } else {
-        return;
-      }
-  
+
+  // Delay execution so the ">" is already inserted.
+  setTimeout(() => {
+    // Case 1: For textarea / input elements.
+    if (target.value !== undefined) {
+      let text = target.value;
+      let cursorPos = target.selectionStart;
+      if (cursorPos === 0 || text[cursorPos - 1] !== '>') return;
       const lastOpen = text.lastIndexOf('<', cursorPos - 1);
       if (lastOpen === -1) return;
-      
-      const tagFragment = text.substring(lastOpen + 1, cursorPos - 1).trim();
-      const match = tagFragment.match(/^([a-zA-Z][a-zA-Z0-9\.\-]*)/);
+      const tagFragment = text.substring(lastOpen, cursorPos);
+      // Ensure it's an opening tag and not self-closing or already a closing tag.
+      if (tagFragment.length < 2 || tagFragment[1] === '/' || /\s*\/\s*>$/.test(tagFragment)) return;
+      const match = tagFragment.match(/^<\s*([a-zA-Z][a-zA-Z0-9\.\-\:]*)/);
       if (!match) return;
-      
       const tagName = match[1];
       if (voidElements.includes(tagName.toLowerCase())) return;
-  
       const closingTag = `</${tagName}>`;
-      insertAtCursor(target, closingTag, 0);
-  
-      // Move the cursor back to its original position.
-      if (target.value !== undefined) {
-        target.selectionStart = target.selectionEnd = cursorPos;
-      } else if (target.isContentEditable) {
-        const selection = window.getSelection();
-        const range = document.createRange();
-        range.setStart(target.childNodes[0], cursorPos);
-        range.setEnd(target.childNodes[0], cursorPos);
-        selection.removeAllRanges();
-        selection.addRange(range);
+      // Insert the closing tag immediately after the current cursor position.
+      const newText = text.slice(0, cursorPos) + closingTag + text.slice(cursorPos);
+      target.value = newText;
+      // Restore selection to be right after the opening tag's ">"
+      target.selectionStart = target.selectionEnd = cursorPos;
+      return;
+    }
+
+    // Case 2: For contenteditable elements.
+    if (target.isContentEditable) {
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return;
+      let node = sel.focusNode;
+      let offset = sel.focusOffset;
+      // Ensure we're working with a text node.
+      if (node.nodeType !== Node.TEXT_NODE) {
+        // If not, try to use the first child that is a text node.
+        node = node.firstChild;
+        if (!node || node.nodeType !== Node.TEXT_NODE) return;
+        offset = node.textContent.length;
       }
-    }, 0);
-  });
+      const text = node.textContent;
+      if (offset === 0 || text[offset - 1] !== '>') return;
+      const lastOpen = text.lastIndexOf('<', offset - 1);
+      if (lastOpen === -1) return;
+      const tagFragment = text.slice(lastOpen, offset);
+      // Check that the fragment is a proper opening tag.
+      if (tagFragment.length < 2 || tagFragment[1] === '/' || /\s*\/\s*>$/.test(tagFragment)) return;
+      const match = tagFragment.match(/^<\s*([a-zA-Z][a-zA-Z0-9\.\-\:]*)/);
+      if (!match) return;
+      const tagName = match[1];
+      if (voidElements.includes(tagName.toLowerCase())) return;
+      const closingTag = `</${tagName}>`;
+      // Insert the closing tag into the current text node.
+      const newText = text.slice(0, offset) + closingTag + text.slice(offset);
+      node.textContent = newText;
+      // Calculate the new cursor position: it should be right after the opening tag's ">".
+      const newCursorPos = lastOpen + tagFragment.length;
+      // Restore the selection in the same text node.
+      const range = document.createRange();
+      range.setStart(node, newCursorPos);
+      range.setEnd(node, newCursorPos);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  }, 0);
+});
